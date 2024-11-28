@@ -1,0 +1,86 @@
+title 07 - Refund Ticket BCE
+actor "Staff" as a
+
+boundary "Alert" as al
+boundary "StaffUI" as ui
+
+control "CinemaSystem" as cs
+participant "Cinema" as c
+
+entity "current : MovieScreening" as cms
+entity "selected : MovieScreening" as sms
+entity "t : Ticket" as t
+
+participant "TicketMapper" as sm
+database db
+
+a->ui:mousePressed(x: int, y: int)
+activate ui
+ui->ui:s:=xToScreen(x: int)
+ui->ui:time:=yToTime(y: int)
+
+ui->cs: selectMovieScreening(s: Screen, time: LocalTime)
+activate cs
+loop for each current movie screening and select
+cs->cms:time := getTime()
+cs->cms:s := getSreenName()
+end
+cs->cs:notifyObservers()
+cs->ui:update()
+cs-->ui:
+deactivate cs
+ui-->a:
+deactivate ui
+
+note over a, ui: The first step above is to select the Movie Screening that needs to refund ticket
+
+a->ui:refundTicket()
+activate ui
+ui->cs: refundTicket()
+activate cs
+cs->cs:observerMessage(s:String, true: boolean)
+activate cs
+cs->ui:message(s:String, true: boolean)
+activate ui
+ui->*al:Alert(confirmation: AlertType)
+activate al
+al-->ui:
+deactivate al
+ui->al:showAndWait()
+activate al
+al->a:
+a-->al:
+note over al:user selects OK
+al-->ui:return true
+deactivate al
+ui-->cs:return true
+deactivate ui
+
+cs->c:removeTicket(selected: MovieScreening)
+activate c
+note over cms,sms: remove the t (Ticket) in the sold_tickets Array
+c->sms: removeTicket(t: Ticket)
+activate sms
+sms-->c:
+deactivate sms
+note over cms, sms: delete the t(Ticket) in the database
+c->sm:deleteTicket(t: Ticket)
+activate sm
+sm->sm:performUpdate(sql: String)
+activate sm
+sm->db:executeUpdate(sql: String)
+sm-->sm:
+deactivate sm
+sm-->c:
+deactivate sm
+c-->cs:
+deactivate c
+expandable- See diagram 00 - Display Data
+cs->cs:notifyObservers()                         
+end
+cs-->cs:
+deactivate cs
+cs-->ui:
+deactivate cs
+ui-->a:
+deactivate ui

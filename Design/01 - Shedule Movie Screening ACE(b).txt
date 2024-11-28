@@ -1,0 +1,69 @@
+        title 01 - Shedule Movie Screening ACE(b)
+        actor Staff
+        boundary MovieScreeningDialog
+        boundary Alert
+        boundary StaffUI
+
+        control CinemaSystem
+        participant Cinema
+
+        Staff->StaffUI:addMovieScreening()
+        activate StaffUI
+
+        StaffUI->*MovieScreeningDialog:MovieScreeningDialog()
+        activate MovieScreeningDialog
+        MovieScreeningDialog-->StaffUI:
+        deactivate MovieScreeningDialog
+
+        StaffUI->MovieScreeningDialog:showAndWait()
+        activate MovieScreeningDialog
+        MovieScreeningDialog->Staff:
+        Staff-->MovieScreeningDialog:
+        MovieScreeningDialog-->StaffUI:return ms : MovieScreeningInfo
+        deactivate MovieScreeningDialog
+
+        StaffUI->CinemaSystem:addMovieScreening(date : LocalDate,\ntime : LocalTime,  mId : int, sId : int)
+        activate CinemaSystem
+
+        CinemaSystem->CinemaSystem:checkScreeningGap()
+        activate CinemaSystem
+        CinemaSystem->Cinema:getMovie(mId : int)
+        activate Cinema
+        Cinema-->CinemaSystem:return movie
+        deactivate Cinema
+
+        CinemaSystem->Cinema:getScreen(sId : int)
+        activate Cinema
+        Cinema-->CinemaSystem:return screen
+        deactivate Cinema
+
+        CinemaSystem->CinemaSystem:messageObserver(message : String, true : boolean)
+        activate CinemaSystem
+        CinemaSystem->StaffUI:message(message : String, true : Boolean)
+        activate StaffUI
+        StaffUI->*Alert:Alert( confirmation : AlertType)
+        activate Alert
+        Alert-->StaffUI:
+        deactivate Alert
+
+        StaffUI->Alert:showAndWait();
+        activate Alert
+        Alert->Staff:
+        Staff-->Alert:
+        note over Alert:user selects cancel
+        Alert-->StaffUI:return false
+        deactivate Alert
+        StaffUI-->CinemaSystem:return false
+        deactivate StaffUI
+
+        CinemaSystem-->CinemaSystem:return false
+
+        deactivate CinemaSystem
+        CinemaSystem-->CinemaSystem:return true
+        deactivate CinemaSystem
+
+
+        CinemaSystem-->StaffUI:
+        deactivate CinemaSystem
+        StaffUI-->Staff:
+        deactivate StaffUI

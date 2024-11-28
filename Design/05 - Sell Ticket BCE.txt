@@ -1,0 +1,86 @@
+title 05 - Sell Ticket BCE
+actor "Staff" as S
+boundary "TicketDialog" as sd
+boundary "StaffUI" as ui
+control "CinemaSystem" as CS
+participant "Cinema" as C
+participant "TicketMapper" as tm
+participant "MovieScreeningMapper" as msm
+database db
+entity "t (Ticket)" as T
+entity "ms (MovieScreening)" as MS
+
+database db
+
+S->ui:sellTicket()
+activate ui
+ui->*sd:TicketDialog()
+activate sd
+sd-->ui:
+deactivate sd
+ui->sd:showAndWait()
+activate sd
+sd->S:
+S-->sd:
+sd-->ui: return ms : MovieScreeningInfo
+deactivate sd
+
+ui->CS:sellTicket(msId: int)
+activate CS
+expandable- See diagram 05 - Sell Ticket ECE
+CS->CS:checkCapacity()                                
+
+end
+
+CS->C:createTicket(msId: int)
+activate C
+
+C->msm:getMovieScreening(msId: int)
+activate msm
+msm->msm: getFromCacheByNumber(msId)
+msm-->C: return ms: MovieScreening
+deactivate msm
+
+C->tm:createTicket(ms: MovieScreening)
+activate tm
+
+tm->db:oid:=getId()
+tm->tm:performUpdate(sql:String)
+activate tm
+tm->db:executeUpdate(sql: String)
+tm-->tm:
+deactivate tm 
+tm->*T:PersistentTicket(oid: int, ms: MovieScreening)
+activate T
+T-->tm:
+deactivate T
+tm-->C:
+deactivate tm
+
+C->MS: createTicket( t: Ticket)
+activate MS
+note over msm: Add the t (Ticket) into the sold_tickets Array in the ms (MovieScreening)
+MS-->C:
+deactivate MS
+
+C-->CS:
+
+
+deactivate C
+CS->CS:notifyObservers()
+activate CS
+CS->ui: update()
+activate ui
+ui->CS:date:=getDate()
+ui->CS:screening:=getSelectedScreening()
+ui->CS:tickets:=getSoldTickets()
+
+ui-->CS:
+deactivate ui
+CS-->CS:
+deactivate CS
+CS-->ui:
+deactivate CS
+
+ui-->S:
+deactivate ui

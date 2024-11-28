@@ -1,0 +1,60 @@
+title 01 - Shedule Movie Screening ECE
+actor Staff
+boundary Alert
+boundary MovieScreeningDialog
+boundary StaffUI
+control CinemaSystem
+
+Staff->StaffUI:addMovieScreening()
+activate StaffUI
+
+StaffUI->*MovieScreeningDialog:MovieScreeningDialog()
+activate MovieScreeningDialog
+MovieScreeningDialog-->StaffUI:
+deactivate MovieScreeningDialog
+
+StaffUI->MovieScreeningDialog:showAndWait()
+activate MovieScreeningDialog
+MovieScreeningDialog->Staff:
+Staff-->MovieScreeningDialog:
+MovieScreeningDialog-->StaffUI:return ms : MovieScreeningInfo
+deactivate MovieScreeningDialog
+
+StaffUI->CinemaSystem:addMovieScreening(date : LocalDate,\ntime : LocalTime,  sId : int, mId : int)
+activate CinemaSystem
+
+CinemaSystem->CinemaSystem:checkLessScreeningTime(date : LocalDate, time : LocalTime, mId : Integer,sId : Integer)
+activate CinemaSystem
+note over CinemaSystem: there is not enough time for this movie screening
+
+
+CinemaSystem->CinemaSystem:observerMessage(message : String, false : Boolean)
+activate CinemaSystem
+CinemaSystem->StaffUI: message(message : String, false : Boolean)
+activate StaffUI
+StaffUI->*Alert:Alert( warning : AlertType)
+activate Alert
+Alert-->StaffUI:
+deactivate Alert
+
+StaffUI->Alert:showAndWait()
+activate Alert
+Alert->Staff:
+Staff-->Alert:
+Alert-->StaffUI:return result
+deactivate Alert
+
+StaffUI-->CinemaSystem:return false
+deactivate StaffUI
+
+CinemaSystem-->CinemaSystem:return false
+deactivate CinemaSystem
+CinemaSystem-->CinemaSystem:return true
+
+
+deactivate CinemaSystem
+CinemaSystem-->StaffUI:return false
+deactivate CinemaSystem
+StaffUI-->Staff:
+deactivate StaffUI
+

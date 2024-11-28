@@ -1,0 +1,132 @@
+title 01 - Shedule Movie Screening ACE(a)
+actor Staff
+boundary MovieScreeningDialog
+boundary Alert
+boundary StaffUI
+
+control CinemaSystem
+participant Cinema
+participant MovieMapper
+participant ScreenMapper
+participant ScreeningMapper
+database Database
+entity m (Movie)
+entity s (Screen)
+entity MovieScreening
+
+Staff->StaffUI:addMovieScreening()
+activate StaffUI
+
+StaffUI->*MovieScreeningDialog:MovieScreeningDialog()
+activate MovieScreeningDialog
+MovieScreeningDialog-->StaffUI:
+deactivate MovieScreeningDialog
+
+StaffUI->MovieScreeningDialog:showAndWait()
+activate MovieScreeningDialog
+MovieScreeningDialog->Staff:
+Staff-->MovieScreeningDialog:
+MovieScreeningDialog-->StaffUI:return ms : MovieScreeningInfo
+deactivate MovieScreeningDialog
+
+StaffUI->CinemaSystem:addMovieScreening(date : LocalDate, time : LocalTime,  screenId : int, mId : int)
+activate CinemaSystem
+
+CinemaSystem->CinemaSystem:checkScreeningGap()
+activate CinemaSystem
+CinemaSystem->Cinema:getMovie(mId : int)
+activate Cinema
+Cinema-->CinemaSystem:return movie
+deactivate Cinema
+
+CinemaSystem->Cinema:getScreen(sId : int)
+activate Cinema
+Cinema-->CinemaSystem:return screen
+deactivate Cinema
+
+
+CinemaSystem->CinemaSystem:messageObserver(message : String, true : boolean)
+activate CinemaSystem
+CinemaSystem->StaffUI:message(message : String, true : Boolean)
+activate StaffUI
+StaffUI->*Alert:Alert( confirmation : AlertType)
+activate Alert
+Alert-->StaffUI:
+deactivate Alert
+
+StaffUI->Alert:showAndWait();
+activate Alert
+Alert->Staff:
+Staff-->Alert:
+note over Alert:user selects OK
+Alert-->StaffUI:return true
+deactivate Alert
+StaffUI-->CinemaSystem:return true
+deactivate StaffUI
+
+CinemaSystem-->CinemaSystem:return true
+
+deactivate CinemaSystem
+CinemaSystem-->CinemaSystem:return false
+deactivate CinemaSystem
+
+CinemaSystem->Cinema:addMovieScreening(date : LocalDate,\ntime : LocalTime, sId : int, moId : int)
+activate Cinema
+
+Cinema->MovieMapper:getMovieForOid(mId : int)
+activate MovieMapper
+MovieMapper->MovieMapper:getFromCacheByNumber(mId)
+MovieMapper-->Cinema:return m : Movie
+deactivate MovieMapper
+
+Cinema->ScreenMapper: getScreenForOid(sId : int)
+activate ScreenMapper
+ScreenMapper->ScreenMapper:getFromCacheByNumber(sId)
+ScreenMapper-->Cinema: return s: Screen
+deactivate ScreenMapper
+
+Cinema->s (Screen): c:=getCapacity
+
+
+Cinema->ScreeningMapper:addMovieScreening(date : LocalDate, time : LocalTime, m : Movie, s : Screen, sold_tickets : Ticket[c])
+activate ScreeningMapper
+ScreeningMapper->Database:oid := getId()
+ScreeningMapper->ScreeningMapper:performUpdate(sql : String)
+activate ScreeningMapper
+
+
+ScreeningMapper->Database:executeUpdate(sql : String)
+ScreeningMapper-->ScreeningMapper:
+deactivate ScreeningMapper
+
+
+ScreeningMapper->*MovieScreening:PersistentMovieScreening(oid : Integer,  date : LocalDate, time : LocalTime, m : Movie, s : Screen, sold_tickets : Ticket[c])
+activate MovieScreening
+MovieScreening-->ScreeningMapper:
+deactivate MovieScreening
+ScreeningMapper-->Cinema:
+deactivate ScreeningMapper
+Cinema-->CinemaSystem:
+deactivate Cinema
+CinemaSystem->CinemaSystem:notifyObservers()
+activate CinemaSystem
+CinemaSystem->StaffUI:update()
+activate StaffUI
+StaffUI->CinemaSystem:getDate()
+activate CinemaSystem
+CinemaSystem-->StaffUI:return date
+deactivate CinemaSystem
+StaffUI->CinemaSystem:getScreenings()
+activate CinemaSystem
+CinemaSystem-->StaffUI: return Screenings
+deactivate CinemaSystem
+StaffUI-->CinemaSystem:
+deactivate StaffUI
+CinemaSystem-->CinemaSystem:
+deactivate CinemaSystem
+
+
+CinemaSystem-->StaffUI:
+deactivate CinemaSystem
+StaffUI-->Staff:
+deactivate StaffUI

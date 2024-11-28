@@ -1,0 +1,60 @@
+title 04 - Release Movie Resource ECE
+actor Staff
+boundary Alert
+boundary MovieDialog
+boundary StaffUI
+control CinemaSystem
+
+Staff->StaffUI:addMovie()
+activate StaffUI
+
+StaffUI->*MovieDialog:MovieDialog()
+activate MovieDialog
+MovieDialog-->StaffUI:
+deactivate MovieDialog
+
+StaffUI->MovieDialog:showAndWait()
+activate MovieDialog
+MovieDialog->Staff:
+Staff-->MovieDialog:
+MovieDialog-->StaffUI:return m : MovieInfo
+deactivate MovieDialog
+
+StaffUI->CinemaSystem:addMovie(name: String, duration: int)
+activate CinemaSystem
+
+CinemaSystem->CinemaSystem:checkOverMovie(name: String, duration: int)
+activate CinemaSystem
+note over CinemaSystem: the movie is already in the database
+
+
+CinemaSystem->CinemaSystem:observerMessage(message : String, false : Boolean)
+activate CinemaSystem
+CinemaSystem->StaffUI: message(message : String, false : Boolean)
+activate StaffUI
+StaffUI->*Alert:Alert( warning : AlertType)
+activate Alert
+Alert-->StaffUI:
+deactivate Alert
+
+StaffUI->Alert:showAndWait()
+activate Alert
+Alert->Staff:
+Staff-->Alert:
+Alert-->StaffUI:return result
+deactivate Alert
+
+StaffUI-->CinemaSystem:return false
+deactivate StaffUI
+
+CinemaSystem-->CinemaSystem:return false
+deactivate CinemaSystem
+CinemaSystem-->CinemaSystem:return true
+
+
+deactivate CinemaSystem
+CinemaSystem-->StaffUI:return false
+deactivate CinemaSystem
+StaffUI-->Staff:
+deactivate StaffUI
+

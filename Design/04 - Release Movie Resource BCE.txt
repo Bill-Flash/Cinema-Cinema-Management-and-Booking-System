@@ -1,0 +1,75 @@
+title 04 - Release Movie Resource BCE
+actor "Staff" as a
+
+boundary "movieDialog()" as md
+boundary "StaffUI" as ui
+
+
+control "CinemaSystem" as cs
+participant "Cinema" as c
+participant "MovieMapper" as mm
+
+database db
+
+entity "Movie" as m
+
+a->ui:addMovie()
+activate ui
+ui->*md:MovieDialog()
+activate md
+md-->ui:
+deactivate md
+ui->md:showAndWait()
+activate md
+md->a:
+a-->md:
+md-->ui:return m: MovieInfo
+deactivate md
+
+ui->cs: addMovie(name: String, duration: int)
+activate cs
+expandable- see diagrams 04 - Release Movie Resource ECE
+
+	cs->cs:checkOverMovie()                                                                              
+end 
+cs->c: addMovie(name: String, duration: int)
+activate c
+c->mm:addMovie(name: String, duration: int)
+activate mm
+mm->db:oid:=getOid()
+mm->mm:performUpdate(sql: String)
+activate mm
+mm->db:executeUpdate(sql: String)
+mm-->mm:
+deactivate mm
+mm->*m:PersistentMovie(oid: int, name: String, duration: int)
+activate m
+m-->mm:
+deactivate m
+mm-->c:
+deactivate mm
+c-->cs:
+deactivate c
+cs->cs:notifyObservers()   
+
+activate cs
+cs->ui:update()
+activate ui
+
+ui->cs:getMovies()
+activate cs
+cs-->ui: return movies
+
+deactivate cs
+ui-->cs:
+deactivate ui
+cs-->cs:
+deactivate cs
+
+
+
+
+cs-->ui:
+deactivate cs
+ui-->a:
+deactivate ui

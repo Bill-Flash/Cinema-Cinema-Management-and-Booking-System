@@ -1,0 +1,126 @@
+title 06 - Change Ticket BCE
+actor "Staff" as a
+
+boundary "Alert" as al
+boundary "StaffUI" as ui
+
+control "CinemaSystem" as cs
+participant "Cinema" as c
+
+entity "current : MovieScreening" as cms
+entity "old: MovieScreening" as sms
+entity "new: MovieScreening" as nms
+entity "t : Ticket" as t
+
+participant "TicketMapper" as sm
+database db
+
+a->ui:mousePressed(x: int, y: int)
+activate ui
+ui->ui:s:=xToScreen(x: int)
+ui->ui:time:=yToTime(y: int)
+
+ui->cs: selectMovieScreening(s: Screen, time: LocalTime)
+activate cs
+loop for each current movie screening and select
+cs->cms:time := getTime()
+cs->cms:s := getSreenName()
+end
+cs->cs:notifyObservers()
+cs->ui:update()
+cs-->ui:
+deactivate cs
+ui-->a:
+deactivate ui
+
+note over a, ui: The first step above is to select the Old Movie Screening and New Movie Screening that need to change ticket
+
+a->ui:mousePressed(x: int, y: int)
+activate ui
+ui->ui:ms:=xToMovieScreen(x: int)
+ui->ui:tId:=yToTicketId(y: int)
+
+ui->cs: selectTicket(ms: MovieScreen, tId: int)
+activate cs
+
+
+loop for each sold ticket in Selected Movie Screening
+cs->sms:t := getSoldTickets(int)
+
+end
+cs->cs:notifyObservers()
+cs->ui:update()
+cs-->ui:
+deactivate cs
+ui-->a:
+deactivate ui
+
+note over a, ui: The Second step above is to select the ticket in the Old Movie Screening
+
+loop for everytime the mouse is moved
+a->ui:mouseMoved(x: int, y: int)
+activate ui
+ui->ui:update()
+ui-->a:
+deactivate ui
+end 
+
+note over a, ui: The third step above is to drag the selected ticket into a new Movie Screenin
+
+
+a->ui:mouseReleased(x: int, y: int)
+activate ui
+ui->ui:ms:=xToMovieScreen(x: int)
+ui->ui:tId:=yToTicketId(y: int)
+
+
+ui->cs: changeTicket(old: MovieScreening)
+activate cs
+expandable− See diagram 05 - Sell Ticket ECE
+cs->cs:checkNoCapacity()                                                       
+end
+
+
+cs->c: updateTickets(old : MovieScreening, new : MovieScreening)
+activate c
+
+
+c->sms: removeTicket(t: Ticket)
+activate sms
+sms-->c:
+deactivate sms
+
+c->nms: addTicket(t: Ticket)
+activate nms
+nms-->c:
+deactivate nms
+c->t: setScreening(new: MovieScreening)
+activate t
+t->c:
+deactivate t
+
+note over c, t: the fourth step is to delete the ticket in old Movie Screening and add it to new Movie Screening
+
+
+c->sm:updateTickets(old : MovieScreening, new : MovieScreening)
+activate sm
+sm->sm:performUpdate(sql: String)
+activate sm
+note over cms,nms: update the UI information by database
+sm->db:executeUpdate(sql: String)
+sm-->sm:
+deactivate sm
+sm-->c:
+deactivate sm
+c-->cs:
+deactivate c
+
+
+
+expandable- See diagram 00 - Display Data
+cs->cs:notifyObservers()                        
+end
+cs-->ui:
+deactivate cs
+ui-->a:
+deactivate ui

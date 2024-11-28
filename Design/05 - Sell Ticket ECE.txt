@@ -1,0 +1,62 @@
+title 05 - Sell Ticket BCE
+actor "Staff" as S
+boundary Alert
+boundary "TicketDialog" as sd
+boundary "StaffUI" as ui
+control "CinemaSystem" as CS
+
+S->ui:sellTicket()
+activate ui
+ui->*sd:TicketDialog()
+activate sd
+sd-->ui:
+deactivate sd
+ui->sd:showAndWait()
+activate sd
+sd->S:
+S-->sd:
+sd-->ui: return ms : MovieScreeningInfo
+deactivate sd
+
+ui->CS:sellTicket(msId: int)
+activate CS
+
+CS->CS:checkNoCapacity()                   
+activate CS
+note over CS: All the ticket are sold out
+
+CS->CS:observerMessage(message : String, false : Boolean)
+activate CS
+CS->ui: message(message : String, false : Boolean)
+activate ui
+ui->*Alert:Alert( warning : AlertType)
+activate Alert
+Alert-->ui:
+deactivate Alert
+
+ui->Alert:showAndWait()
+activate Alert
+Alert->S:
+S-->Alert:
+Alert-->ui:return result
+deactivate Alert
+
+ui-->CS:return false
+deactivate ui
+
+CS-->CS:return false
+deactivate CS
+CS-->CS:return true
+
+
+deactivate CS
+CS-->ui:return false
+deactivate CS
+ui-->S:
+deactivate ui
+
+
+
+
+
+
